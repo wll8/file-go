@@ -1,0 +1,19 @@
+{
+  "name": "link-file",
+  "version": "1.0.0",
+  "description": "文件搬迁助手",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "shelljs": "^0.8.5",
+    "shx": "^0.3.4"
+  }
+}
