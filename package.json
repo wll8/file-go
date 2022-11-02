@@ -1,19 +1,15 @@
 {
-  "name": "link-file",
+  "name": "file-go",
   "version": "1.0.0",
-  "description": "文件搬迁助手",
+  "description": "本程序使用 windows 平台的一些工具进行文件的复制、备份、迁移。支持使用通配符排除不需要的文件。",
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "wll8",
+  "license": "MIT",
   "dependencies": {
-    "shelljs": "^0.8.5",
-    "shx": "^0.3.4"
+    "shelljs": "^0.8.5"
   }
 }
