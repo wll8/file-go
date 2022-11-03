@@ -6,7 +6,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "bin": {
+    "file-go": "index.js"
+  },
+  "homepage": "https://github.com/wll8/file-go",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wll8/file-go.git"
+  },
+  "keywords": ["copy", "zip", "backup"],
   "author": "wll8",
   "license": "MIT",
   "dependencies": {

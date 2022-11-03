@@ -15,18 +15,30 @@ const defaultArg = {
   out: `${process.cwd()}/store`,
 }
 
+function treeSize(path = ``){
+  run({note: `分析磁盘空间使用情况`, cmd: `${__dirname}/lib/WizTree/WizTree.exe "${path}"`, code: [0]})
+}
+
+function handleInfo(path = ``){
+  path = path.replace(/\//g, `\\`) // 注: UnlockHandle.ps1 支持的目录分割符是 \ 而不是 /
+  run({note: `查看占用`, cmd: `PowerShell.exe -ExecutionPolicy unrestricted -File "${__dirname}/lib/Handle-Unlocker/UnlockHandle.ps1" -target "${path}"`, code: [0]})
+}
+
 /**
  * 移动目录到指定位置并创建链接
  * @param {*} param0 
  */
 function linkDir({
   file = [], // 要创建链接的目录列表
-  out = outDefault, // 链接存储的目的位置
+  out = defaultArg.out, // 链接存储的目的位置
 } = {}) {
-  file.filter(item => fs.existsSync(item)).forEach(item => {
+  file.forEach(item => {
     let src = item.replace(/\\/g, `/`)
     const srcName = src.split(`/`).slice(-1)[0]
-    run({note: `测试访问权限或占用状态`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}_back" && ren "${srcName}_back" "${srcName}`, code: [0]})
+    run({note: `测试访问权限或占用状态`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}_back" && ren "${srcName}_back" "${srcName}"`, code: [0], errCb: () => {
+      handleInfo(src)
+      console.log(`请解除相关占用后重试`)
+    }})
     copy({file: [src], out, ignore: []})
     run({note: `移除旧文件`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}_back"`, code: [0]})
     run({note: `创建链接`, cmd: `mklink /J "${src}" "${`${out}/${src.replace(`:`, ``)}`}"`, code: [0]})
@@ -44,13 +56,13 @@ function copy({
   out = defaultArg.out, // 要复制到的目的地
   ignore = defaultArg.ignore, // 要排除的文件列表
 } = {}) {
-  file.filter(item => fs.existsSync(item)).forEach(item => {
+  file.forEach(item => {
     const arr = [
       `robocopy`,
       `"${item}"`,
       `"${out}/${item.replace(`:`, ``)}"`, // 保存源目录结构
       `/E`, // 复制所有子目录包括空文件夹
-      `/COPYALL`, // 复制所有文件信息(等同于 /COPY:DATSOU)
+      // `/COPYALL`, // 复制所有文件信息(等同于 /COPY:DATSOU), 需要管理员模式才能使用此参数
       `/R:3`, // 指定复制失败时的重试次数
       `/W:10`, // 指定等待重试的间隔时间，以秒为单位
       `/MT:32`, // 使用 n 个线程创建多线程副本
@@ -70,6 +82,7 @@ function zip({
   out = defaultArg.out, // 输出文件名
   file = [], // 要压缩的文件列表
   v = `1g`, // 分卷大小, 传 false 为不使用分卷
+  p = undefined, // 压缩密码
   spf = true, // 是否存储绝对地址, 如果要压缩的文件名有相同时, 需要指定, 否则会出错
   mx = 0, // 配置压缩等级, 0 为不压缩, 0-9
   ignore = defaultArg.ignore, // 要排除的文件列表
@@ -81,8 +94,9 @@ function zip({
     `"${__dirname}/lib/7z/7z.exe"`,
     `a`,
     `"${out}"`,
-    ...file.filter(item => fs.existsSync(item)).map(item => `"${item}"`),
+    ...file.map(item => `"${item}"`),
     v ? `-v${v}` : undefined,
+    p ? `-p${p}` : undefined, // -mhe 可以加密文件名, 但 .zip 格式不支持
     spf ? `-spf` : undefined,
     `-tzip`,
     `-mx${mx}`,
@@ -100,13 +114,14 @@ function zip({
  * @param {string} param0.cmd 要运行的命令本身
  * @param {array[number]} param0.code 命令成功的标志, 不传时默认成功, 传时必须包含指定命令退出码才表示成功
  */
-function run({note, cmd, code = [0]}) {
+function run({note, cmd, code = [0], errCb = () => {}, cwd}) {
   console.log(`${note}: ${cmd}`)
   try {
-    typeof(cmd) === `function` ? cmd() : cp.execSync(cmd, {stdio: `inherit`, maxBuffer: 9e9})
+    typeof(cmd) === `function` ? cmd() : cp.execSync(cmd, {stdio: `inherit`, maxBuffer: 9e9, cwd})
   } catch (error) {
     if(code.includes(error.status) === false) {
-      console.log(`${note}错误 ${error.status}`)
+      console.log(`${note} -- 任务运行失败, 状态码: ${error.status}`)
+      errCb()
       process.exit()
     }
   }
@@ -138,6 +153,8 @@ function parseArgv(arr) {
 
 
 module.exports = {
+  treeSize,
+  handleInfo,
   parseArgv,
   copy,
   linkDir,
