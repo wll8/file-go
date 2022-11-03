@@ -16,7 +16,7 @@ const defaultArg = {
 }
 
 function treeSize(path = ``){
-  run({note: `分析磁盘空间使用情况`, cmd: `${__dirname}/lib/WizTree/WizTree.exe "${path}"`, code: [0]})
+  run({note: `分析磁盘空间使用情况`, cmd: `"${__dirname}/lib/WizTree/WizTree.exe" "${path}"`, code: [0]})
 }
 
 function handleInfo(path = ``){
