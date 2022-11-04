@@ -36,15 +36,16 @@ function linkDir({
   file.forEach(item => {
     let src = item.replace(/\\/g, `/`)
     const srcName = src.split(`/`).slice(-1)[0]
-    fs.existsSync(`${src}_back`) && run({note: `确定移除旧文件`, cmd: `rd /s /q "${src}_back"`, code: [0]})
-    run({note: `测试访问权限或占用状态`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}_back" && ren "${srcName}_back" "${srcName}"`, code: [0], errCb: () => {
+    const suffix = `_=${new Buffer.from(os.userInfo().username).toString(`base64`)}=link=back=`
+    fs.existsSync(`${src}${suffix}`) && run({note: `确定移除旧文件`, cmd: `rd /s /q "${src}${suffix}"`, code: [0]})
+    run({note: `测试访问权限或占用状态`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}${suffix}" && ren "${srcName}${suffix}" "${srcName}"`, code: [0], errCb: () => {
       handleInfo(src)
       console.log(`请使用管理员身份启动程序或解除相关占用后重试`)
     }})
     copy({file: [src], out, ignore: []})
-    run({note: `移除旧文件`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}_back"`, code: [0]})
+    run({note: `移除旧文件`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}${suffix}"`, code: [0]})
     run({note: `创建链接`, cmd: `mklink /J "${src}" "${`${out}/${src.replace(`:`, ``)}`}"`, code: [0]})
-    run({note: `确定移除旧文件`, cmd: `rd /s /q "${src}_back"`, code: [0]})
+    run({note: `确定移除旧文件`, cmd: `rd /s /q "${src}${suffix}"`, code: [0]})
   })
 }
 
