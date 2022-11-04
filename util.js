@@ -22,6 +22,7 @@ function treeSize(path = ``){
 
 function handleInfo(path = ``){
   path = path.replace(/\//g, `\\`) // 注: UnlockHandle.ps1 支持的目录分割符是 \ 而不是 /
+  console.log(`请使用管理员身份启动程序或解除相关占用(点击 Unlock All)后重试`)
   run({note: `查看占用`, cmd: `PowerShell.exe -ExecutionPolicy unrestricted -File "${__dirname}/lib/Handle-Unlocker/UnlockHandle.ps1" -target "${path}"`, code: [0]})
 }
 
@@ -32,20 +33,21 @@ function handleInfo(path = ``){
 function linkDir({
   file = [], // 要创建链接的目录列表
   out = defaultArg.out, // 链接存储的目的位置
+  ignoreErr = false, // 忽略复制过程中的错误
 } = {}) {
   file.forEach(item => {
-    let src = item.replace(/\\/g, `/`)
-    const srcName = src.split(`/`).slice(-1)[0]
-    const suffix = `_=${new Buffer.from(os.userInfo().username).toString(`base64`)}=link=back=`
-    fs.existsSync(`${src}${suffix}`) && run({note: `确定移除旧文件`, cmd: `rd /s /q "${src}${suffix}"`, code: [0]})
-    run({note: `测试访问权限或占用状态`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}${suffix}" && ren "${srcName}${suffix}" "${srcName}"`, code: [0], errCb: () => {
-      handleInfo(src)
-      console.log(`请使用管理员身份启动程序或解除相关占用后重试`)
-    }})
-    copy({file: [src], out, ignore: []})
-    run({note: `移除旧文件`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}${suffix}"`, code: [0]})
-    run({note: `创建链接`, cmd: `mklink /J "${src}" "${`${out}/${src.replace(`:`, ``)}`}"`, code: [0]})
-    run({note: `确定移除旧文件`, cmd: `rd /s /q "${src}${suffix}"`, code: [0]})
+    const srcPath = item.replace(/\\/g, `/`)
+    const srcDir = path.parse(srcPath).dir
+    const srcName = path.parse(srcPath).name
+    const backName = `${srcName}_=${new Buffer.from(os.userInfo().username).toString(`base64`)}=link=back=`
+    const backPath = `${srcDir}/${backName}`
+    fs.existsSync(backPath) && run({note: `尝试移除旧文件`, cmd: `rd /s /q "${backPath}"`, code: [0], errCb: (err, exit) => {handleInfo(backPath), exit()}})
+    run({note: `测试访问权限-测试`, cmd: `cd /d "${srcDir}" && ren "${srcName}" "${backName}"`, code: [0], errCb: (err, exit) => {handleInfo(srcPath), exit()}})
+    run({note: `测试访问权限-还原`, cmd: `cd /d "${srcDir}" && ren "${backName}" "${srcName}"`, code: [0], errCb: (err, exit) => {handleInfo(backPath), exit()}})
+    copy({file: [srcPath], out, ignore: [], ignoreErr})
+    run({note: `测试访问权限-测试`, cmd: `cd /d "${srcDir}" && ren "${srcName}" "${backName}"`, code: [0], errCb: (err, exit) => {handleInfo(srcPath), exit()}})
+    run({note: `创建文件链接`, cmd: `mklink /J "${srcPath}" "${`${out}/${srcPath.replace(`:`, ``)}`}"`, code: [0]})
+    fs.existsSync(backPath) && run({note: `尝试移除旧文件`, cmd: `rd /s /q "${backPath}"`, code: [0], errCb: (err, exit) => {handleInfo(backPath), exit()}})
   })
 }
 
@@ -58,6 +60,7 @@ function copy({
   file = [], // 要复制的文件列表
   out = defaultArg.out, // 要复制到的目的地
   ignore = defaultArg.ignore, // 要排除的文件列表
+  ignoreErr = false, // 忽略复制过程中的错误
 } = {}) {
   file.forEach(item => {
     const arr = [
@@ -77,7 +80,14 @@ function copy({
       ignore.length ? `/XF ${ignore.join(` `)}` : undefined, // 排除与指定名称和路径匹配的文件
     ]
     const cmd = arr.filter(Boolean).join(` `)
-    run({note: `复制文件`, cmd, code: [0, 1]})
+    run({note: `复制文件`, cmd, code: [0, 1], errCb: (err, exit) => {
+      if(ignoreErr === false) {
+        console.log(`出现处理失败的文件, 若错误程度可以接受, 可以使用 ignoreErr=true 选项忽略本错误`)
+        exit()
+      } else {
+        console.log(`由于你使用了 ignoreErr=true 选项, 本错误将被忽略`)
+      }
+    }})
   })
 }
 
@@ -121,15 +131,14 @@ function zip({
  * @param {string} param0.cmd 要运行的命令本身
  * @param {array[number]} param0.code 命令成功的标志, 不传时默认成功, 传时必须包含指定命令退出码才表示成功
  */
-function run({note, cmd, code = [0], errCb = () => {}, cwd}) {
+function run({note, cmd, code = [0], errCb = (err, exit) => {exit()}, cwd}) {
   console.log(`${note}: ${cmd}`)
   try {
     typeof(cmd) === `function` ? cmd() : cp.execSync(cmd, {stdio: `inherit`, maxBuffer: 9e9, cwd})
   } catch (error) {
     if(code.includes(error.status) === false) {
       console.log(`${note} -- 任务运行失败, 状态码: ${error.status}`)
-      errCb()
-      process.exit()
+      errCb(error, process.exit)
     }
   }
 }
