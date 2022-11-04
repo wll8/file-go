@@ -68,7 +68,11 @@ function copy({
       // `/COPYALL`, // 复制所有文件信息(等同于 /COPY:DATSOU), 需要管理员模式才能使用此参数
       `/R:3`, // 指定复制失败时的重试次数
       `/W:10`, // 指定等待重试的间隔时间，以秒为单位
-      `/MT:32`, // 使用 n 个线程创建多线程副本
+      `/MT:64`, // 使用 n 个线程创建多线程副本
+      `/NDL`, // 不输出目录名
+      `/NC`, // 不输出文件类
+      `/COPY:DAT`, // 复制数据、属性、时间戳
+      `/DCOPY:DAT`, // 复制数据、属性、时间戳
       ignore.length ? `/XD ${ignore.join(` `)}` : undefined, // 排除与指定名称和路径匹配的目录
       ignore.length ? `/XF ${ignore.join(` `)}` : undefined, // 排除与指定名称和路径匹配的文件
     ]
