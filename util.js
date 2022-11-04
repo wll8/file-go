@@ -36,9 +36,10 @@ function linkDir({
   file.forEach(item => {
     let src = item.replace(/\\/g, `/`)
     const srcName = src.split(`/`).slice(-1)[0]
+    fs.existsSync(`${src}_back`) && run({note: `确定移除旧文件`, cmd: `rd /s /q "${src}_back"`, code: [0]})
     run({note: `测试访问权限或占用状态`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}_back" && ren "${srcName}_back" "${srcName}"`, code: [0], errCb: () => {
       handleInfo(src)
-      console.log(`请解除相关占用后重试`)
+      console.log(`请使用管理员身份启动程序或解除相关占用后重试`)
     }})
     copy({file: [src], out, ignore: []})
     run({note: `移除旧文件`, cmd: `cd /d "${src}" && cd ../ && ren "${srcName}" "${srcName}_back"`, code: [0]})
