@@ -26,6 +26,14 @@ new Promise(async () => {
       file,
       ignore,
     })
+    arg1 === `sdelete` && await util.sdelete({
+      ...cliArg,
+      file,
+    })
+    arg1 === `crush` && await util.crush({
+      ...cliArg,
+      file,
+    })
     arg1 === `size` && (file.length ? file : [process.cwd()]).forEach(item => util.treeSize(item))
     arg1 === `handle` && (file.length ? file : [process.cwd()]).forEach(item => util.handleInfo(item))
   } catch (error) {

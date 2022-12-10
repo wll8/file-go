@@ -51,6 +51,44 @@ function linkDir({
   })
 }
 
+/**
+ * 粉碎标记为已删除的文件
+ * 此操作不会对已存在的文件进行操作, 它对硬盘上已被删除的文件进行内容重写以避免恢复
+ * @param {*} param0 
+ */
+function crush({
+  file = [],
+} = {}) {
+  file.forEach(item => {
+    const srcPath = item.replace(/\\/g, `/`)
+    run({note: `正在粉碎标记为已删除的文件`, cmd: `cipher /w:"${srcPath}"`, code: [0], errCb: (err, exit) => {handleInfo(srcPath), exit()}})
+  })
+}
+
+/**
+ * 安全删除文件
+ * sdelete https://learn.microsoft.com/en-us/sysinternals/downloads/sdelete
+  - 避免出现许可证弹窗 https://hahndorf.eu/blog/post/2010/03/07/WorkAroundSysinternalsLicensePopups
+  - `reg.exe ADD "HKCU\Software\Sysinternals\SDelete" /v EulaAccepted /t REG_DWORD /d 1 /f`
+ * 经测试使用 sdelete 删除或使用 crush 覆盖能被电脑管家文件恢复工具万能模式恢复, 
+ * 但 Recuva/DiskGenius/WinfrGUI/disk-drill 都不能恢复, 
+ * 暂不知道是不是电脑管家对系统做了什么操作(例如电脑管家本身就有一个删除备份的功能).
+ * 另外, 使用 sdelete 传入中文时报错 `No files/folders found that match E:/???.`
+ * 所以这里使用普通删除再使用 crush
+ * 
+ * 
+ * @param {*} param0 
+ */
+function sdelete({
+  file = [],
+} = {}) {
+  file.forEach(item => {
+    const srcPath = item.replace(/\\/g, `/`)
+    fs.existsSync(srcPath) && run({note: `正在删除文件`, cmd: `rd /s /q "${srcPath}"`, code: [0], errCb: (err, exit) => {handleInfo(srcPath), exit()}})
+    crush({file: [srcPath]})
+  })
+}
+
 
 /**
  * 复制文件
@@ -169,6 +207,8 @@ function parseArgv(arr) {
 
 
 module.exports = {
+  crush,
+  sdelete,
   treeSize,
   handleInfo,
   parseArgv,

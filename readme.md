@@ -13,6 +13,12 @@ file-go --help
 - size -- 分析磁盘空间使用情况
   - file -- 要处理的目录, 多个使用逗号分割, 默认为当前目录
 
+- crush -- 粉碎标记为已删除的文件
+  - file -- 同上, 默认为当前目录
+
+- sdelete -- 删除当前存在的文件并粉碎它
+  - file -- 同上, 默认为当前目录
+
 - handle -- 查看目录占用情况
   - file -- 同上, 默认为当前目录
 
@@ -57,3 +63,11 @@ file-go link file=C:/temp,D:/temp out=D:/store
 file-go copy file=C:/temp,D:/temp out=D:/store
 
 ```
+
+## todo
+- [ ] 支持使用 cipher 擦除删除的数据
+- [ ] 支持 unzip 命令, 用于解压 zip 文件
+- [ ] 支持 sync 命令, 用于同步文件
+- [ ] 支持 linux 平台
+
+
