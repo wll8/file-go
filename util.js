@@ -143,6 +143,7 @@ function zip({
   ignore = defaultArg.ignore, // 要排除的文件列表
   w, // 临时文件目录
 } = {}) {
+  ;(fs.existsSync(`${out}`) || fs.existsSync(`${out}.001`)) && shelljs.rm(`${out}*`) // 删除已存在的文件
   ;(fs.existsSync(`${out}.zip`) || fs.existsSync(`${out}.zip.001`)) && shelljs.rm(`${out}.zip*`) // 删除已存在的文件
   w = w || path.parse(out).dir
   const arr = [
