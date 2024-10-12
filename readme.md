@@ -69,5 +69,6 @@ file-go copy file=C:/temp,D:/temp out=D:/store
 - [ ] 支持 unzip 命令, 用于解压 zip 文件
 - [ ] 支持 sync 命令, 用于同步文件
 - [ ] 支持 linux 平台
-
+- [ ] 支持 copy link 模式
+  - 即复制时移除临时文件后，再创建连接。可用于移动前端项目，由于前端项目的 node_modules 文件量大，迁移慢，并且迁移后也无法使用，所以不如跳过它，在需要时重新安装。
 
